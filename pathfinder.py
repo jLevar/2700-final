@@ -4,13 +4,42 @@ from itertools import chain, combinations
 
 """
 Least Admissible Set of Covariates for Conditioning
-As Per Judea Pearl's 2007? paper: "Title"
+As Per Judea Pearl's 2009 Paper
 
 Program Created By:
 Joshua LeVar
 Charlie Skinner
 Dennis Konan
 """
+
+
+def main():
+    graph = ex6    # Examples at bottom of file
+    descendants_of_x = find_descendants(graph, 0)
+    backdoor_paths = all_backdoor_paths_x_to_y(graph)
+
+    # Generate all possible sets of nodes (excluding X and Y) 
+    power_set = powerset(range(2, graph.shape[0]))
+    # Remove all sets with descendants of X 
+    adjusted_set = [set for set in power_set if not descendant_in_set(set, descendants_of_x)]
+
+    admissible_sets = []
+    size_of_smallest_admissible_set = np.inf
+    for set in adjusted_set:
+        if len(set) > size_of_smallest_admissible_set:
+            break
+    
+        if blocks_all_paths(set, backdoor_paths, graph):
+            size_of_smallest_admissible_set = len(set)
+            admissible_sets.append(set)
+
+    print("GRAPH\n", graph, "\n========") 
+    print("DESCENDANTS OF X\n", descendants_of_x, "\n========")
+    print("BACKDOOR PATHS\n", [path for path in backdoor_paths], "\n========")
+    print("POWERSET\n", power_set, "\n========")
+    print("ADJUSTED SET\n", adjusted_set, "\n========")
+    print("LEAST ADMISSIBLE SETS\n", [set for set in admissible_sets])
+
 
 def find_descendants(graph, node):
     descendants = []
@@ -70,6 +99,19 @@ def all_backdoor_paths_x_to_y(graph):
     return all_paths
 
 
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return list(chain.from_iterable(combinations(s, r) for r in range(len(s)+1)))
+
+
+def descendant_in_set(set, descendants):
+        for descendant in descendants:
+            if descendant in set:
+                return True
+        return False
+
+
 def is_collider(node_index, path, graph) -> bool:
     if node_index <= 0 or node_index >= (len(path)-1):
         return False
@@ -78,6 +120,13 @@ def is_collider(node_index, path, graph) -> bool:
     incoming_arrow_right = graph.item(path[node_index+1], path[node_index])
 
     return incoming_arrow_left and incoming_arrow_right
+
+
+def blocks_all_paths(set, paths, graph) -> bool:
+    for path in paths:
+        if not blocks_path(set, path, graph):
+            return False
+    return True
 
 
 def blocks_path(set, path, graph) -> bool:
@@ -99,52 +148,6 @@ def blocks_path(set, path, graph) -> bool:
                         return False
                 return True
 
-
-def blocks_all_paths(set, paths, graph) -> bool:
-    for path in paths:
-        if not blocks_path(set, path, graph):
-            return False
-    return True
-
-
-def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)
-    return list(chain.from_iterable(combinations(s, r) for r in range(len(s)+1)))
-
-
-def descendant_in_set(set, descendants):
-        for descendant in descendants:
-            if descendant in set:
-                return True
-        return False
-
-
-def main():
-    graph = ex2
-    descendants_of_x = find_descendants(graph, 0)
-    backdoor_paths = all_backdoor_paths_x_to_y(graph)
-    # Generate all possible sets of nodes (excluding X and Y) 
-    power_set = powerset(range(2, graph.shape[0]))
-    # Remove all sets with descendants of X 
-    adjusted_set = [set for set in power_set if not descendant_in_set(set, descendants_of_x)]
-
-    admissible_sets = []
-    size_of_smallest_admissible_set = np.inf
-    for set in adjusted_set:
-        if len(set) > size_of_smallest_admissible_set:
-            break
-    
-        if blocks_all_paths(set, backdoor_paths, graph):
-            size_of_smallest_admissible_set = len(set)
-            admissible_sets.append(set)
-
-    print("GRAPH\n", graph, "\n========") 
-    print("DESCENDANTS OF X\n", descendants_of_x, "\n========")
-    print("BACKDOOR PATHS\n", [path for path in backdoor_paths], "\n========")
-    print("POWERSET\n", power_set, "\n========")
-    print("ADJUSTED SET\n", adjusted_set, "\n========")
-    print("LEAST ADMISSIBLE SETS\n", [set for set in admissible_sets])
 
 ### Examples
 ex2 = np.matrix([[0, 1, 1, 0, 0],
@@ -169,18 +172,17 @@ ex5 = np.matrix([[0, 1, 1, 0, 0],
                 [1, 1, 0, 0, 1],
                 [0, 1, 0, 0, 0]])
 
+# example 6: Confouding M Triangles
 ex6 = np.matrix([[0, 1, 0, 0, 0],
                  [0, 0, 0, 0, 0],
                  [1, 0, 0, 1, 0],
                  [1, 1, 0, 0, 0],
                  [0, 1, 0, 1, 0]])
-# confouding M triangles
 
 ex7 = np.matrix([[0, 1, 0, 1],
                  [0, 0, 0, 0],
                  [1, 0, 0, 1],
                  [0, 1, 0, 0]])
-
 
 if __name__=="__main__":
     main()
