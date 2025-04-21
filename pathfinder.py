@@ -12,7 +12,6 @@ Charlie Skinner
 Dennis Konan
 """
 
-
 def main():
     graph = ex6    # Examples at bottom of file
     descendants_of_x = find_descendants(graph, 0)
@@ -21,8 +20,9 @@ def main():
     # Generate all possible sets of nodes (excluding X and Y) 
     power_set = powerset(range(2, graph.shape[0]))
     # Remove all sets with descendants of X 
-    adjusted_set = [set for set in power_set if not descendant_in_set(set, descendants_of_x)]
+    adjusted_set = [set for set in power_set if not list_in_set(descendants_of_x, set)]
 
+    # Check all sets from smallest to largest until solution(s) are found
     admissible_sets = []
     size_of_smallest_admissible_set = np.inf
     for set in adjusted_set:
@@ -105,11 +105,18 @@ def powerset(iterable):
     return list(chain.from_iterable(combinations(s, r) for r in range(len(s)+1)))
 
 
-def descendant_in_set(set, descendants):
-        for descendant in descendants:
-            if descendant in set:
-                return True
-        return False
+def list_in_set(list, set):
+    for elem in list:
+        if elem in set:
+            return True
+    return False
+
+
+def list_not_in_set(list, set):
+    for elem in list:
+        if elem in set:
+            return False
+    return True
 
 
 def is_collider(node_index, path, graph) -> bool:
@@ -131,8 +138,7 @@ def blocks_all_paths(set, paths, graph) -> bool:
 
 def blocks_path(set, path, graph) -> bool:
     for i in range(1, len(path)-1):
-        node = path[i]
-        
+        node = path[i]        
         if node in set: 
             ## Condition 1 -- Is arrow emitting node
             arrow_backwards = bool(graph.item(node, path[i-1]))
@@ -143,10 +149,10 @@ def blocks_path(set, path, graph) -> bool:
         else:
             ## Condition 2 -- Collider (or descendant) outside of set
             if is_collider(i, path, graph):
-                for elem in [i] + find_descendants(i):
-                    if elem in set:
-                        return False
-                return True
+                collider_and_descendants = [i] + find_descendants(graph, i)
+                if list_not_in_set(collider_and_descendants, set):
+                    return True
+    return False
 
 
 ### Examples
@@ -183,6 +189,27 @@ ex7 = np.matrix([[0, 1, 0, 1],
                  [0, 0, 0, 0],
                  [1, 0, 0, 1],
                  [0, 1, 0, 0]])
+
+ex8 = np.matrix([
+    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]])
+
+ex9 = np.matrix([[0, 1, 0, 0, 0],
+                 [0, 0, 0, 0, 0],
+                 [1, 0, 0, 1, 0],
+                 [0, 0, 0, 0, 0],
+                 [0, 1, 0, 1, 0]])
 
 if __name__=="__main__":
     main()
